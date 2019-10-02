@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+# This shell script is a Git Hook that will automatically
+# update all submodules (if they were changed) any time you perform a merge or pull
+# and prepare commits for each submodule.
+#
+# To use this script save it as `.git/hooks/post-merge` in
+# your repository and make the script executable, e.g. via
+# `chmod +x .git/hooks/post-merge`.
+##################################################################
+
+git submodule update --remote --recursive
+
+# Get a list of all the submodules
+submodules=($(git config --file .gitmodules --get-regexp path | awk '{ print $2 }'))
+
+# Loop over submodules and prepare commits
+for submodule in "${submodules[@]}"
+do
+    echo "$submodule"
+	changed=$(git diff $submodule|awk '{print $2}')
+
+    if [ ${#changed} -gt 0  ]; then
+   		echo "Committing $submodule which was updated in original repository"
+   		git add $submodule
+   		git commit -m "Submodule $submodule pulled from origin"
+    fi
+done
